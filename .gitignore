@@ -1,6 +1,10 @@
 .idea
 .venv
 
+# auto generated files
+*.pyo
+*.pyc
+
 # sensitive info
 .env
 
