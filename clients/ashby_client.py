@@ -1,20 +1,24 @@
 import requests
-from dotenv import load_dotenv
 import os
+import logging
+
+from requests import RequestException
 
 from models.enums.company_enum import CompanyEnum
 
-load_dotenv()
+logger = logging.getLogger(__name__)
 
 def fetch_listings(company: CompanyEnum) -> str | None:
     try:
+        logger.info(f'Fetching jobs from ashby for company: {company}')
         response = requests.get(os.getenv('DEFAULT_URL') + company.value)
 
         if response.status_code == 200:
-            print(f'[INFO] Jobs sucessfully fetched for company: {company}')
+            logger.info(f'Jobs successfully fetched for company: {company}')
             return response.text
         else:
-            print(f'[ERROR] Error getting jobs from ashby for company: {company}')
+            logger.info(f'Error getting jobs from ashby for company: {company} | Status code: {response.status_code}')
             return None
-    except Exception: # TODO: Mapear exceptions, e salvar os erros em uma tabela (catch aqui? acho que melhor na camada mais externa)
-        print(f'[ERROR] Error getting jobs from ashby for company: {company}')
+    except RequestException as e:
+        logger.error(f'[RequestException] Error getting jobs from ashby for company: {company} | Error {e}')
+        return None

@@ -1,13 +1,34 @@
+import logging
+import os
+import time
+import schedule
+from dotenv import load_dotenv
+
 from models.enums.company_enum import CompanyEnum
 from services.jobs_service import get_jobs
-import time
+
+load_dotenv()
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def _run() -> None:
+    companies = [CompanyEnum.COMMURE_ATHELAS, CompanyEnum.EIGHTSLEEP, CompanyEnum.SUPABASE, CompanyEnum.DEEL, CompanyEnum.POSTHOG]
+    logger.info('Running application')
+
+    for company in companies:
+        get_jobs(company)
+        time.sleep(3)
+
+
+def main() -> None:
+    logger.info('Starting application')
+    _run()
+    schedule.every(int(os.getenv('TIME_BETWEEN_EXECUTIONS'))).minutes.do(_run)
+
 
 if __name__ == "__main__":
-    start_time = time.time()
-    get_jobs(CompanyEnum.COMMURE_ATHELAS)
-    get_jobs(CompanyEnum.EIGHTSLEEP)
-    get_jobs(CompanyEnum.SUPABASE)
-    get_jobs(CompanyEnum.DEEL)
-    get_jobs(CompanyEnum.POSTHOG)
-
-    print(f'[INFO] First execution time: {time.time() - start_time} seconds')
+    main()
+    while True:
+        schedule.run_pending()
+        time.sleep(1)

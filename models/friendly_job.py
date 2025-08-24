@@ -29,6 +29,7 @@ class FriendlyJob(Job):
         )
         self.is_brazilian_friendly = is_brazilian_friendly
 
+
     def to_dict(self) -> dict:
         return {
             'id': self.id,

@@ -1,9 +1,12 @@
+import logging
 from typing import Any, List
 
 from models.job import Job
 from models.friendly_job import FriendlyJob
 from models.enums.company_enum import CompanyEnum
 from mappers.job_mapper import job_to_friendly_job
+
+logger = logging.getLogger(__name__)
 
 IS_BRAZILIAN_FRIENDLY_KEY = 'is_brazilian_friendly'
 
@@ -100,17 +103,13 @@ def _filter_by_company(job_listing: FriendlyJob, company: CompanyEnum) -> bool:
 
 
 def filter_brazilian_friendly_jobs(jobs: List[Job], company: CompanyEnum) -> List[FriendlyJob]:
-    brazilian_friendly_jobs: List[FriendlyJob] = []
-    not_friendly_jobs: List[FriendlyJob] = []
+    logger.info(f'Filtering brazilian friendly jobs for company: {company}')
 
+    brazilian_friendly_jobs: List[FriendlyJob] = []
 
     for job in jobs:
         mapped_job = job_to_friendly_job(job)
-
         if _filter_by_company(mapped_job, company):
             brazilian_friendly_jobs.append(mapped_job)
-        else:
-            not_friendly_jobs.append(mapped_job)
 
-    # TODO: Fazer algo com as vagas não amigáveis, para poder auditar posteriormente
     return brazilian_friendly_jobs
