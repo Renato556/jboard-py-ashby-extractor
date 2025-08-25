@@ -2,19 +2,18 @@ import logging
 import os
 from typing import List
 
-from mappers.job_mapper import friendly_job_to_normalized_job
-from models.enums.company_enum import CompanyEnum
-from models.enums.field_enum import FieldEnum
-from models.enums.seniority_enum import SeniorityEnum
-from models.friendly_job import FriendlyJob
-from models.normalized_job import NormalizedJob
+from src.mappers.job_mapper import friendly_job_to_normalized_job
+from src.models.enums.field_enum import FieldEnum
+from src.models.enums.seniority_enum import SeniorityEnum
+from src.models.friendly_job import FriendlyJob
+from src.models.normalized_job import NormalizedJob
 
 
 logger = logging.getLogger(__name__)
 
 
-def _define_url(company: CompanyEnum, job_id: str) -> str:
-    return f'{os.getenv('DEFAULT_URL')}{company.value}/{job_id}'
+def _define_url(company: str, job_id: str) -> str:
+    return f'{os.getenv('DEFAULT_URL')}{company}/{job_id}'
 
 
 def _set_seniority(job: NormalizedJob, seniority: SeniorityEnum) -> None:
@@ -63,10 +62,10 @@ def _normalize_field(job: NormalizedJob) -> None:
         _set_field(job, FieldEnum.OTHER.value)
 
 
-def normalize_jobs(jobs: List[FriendlyJob], company: CompanyEnum) -> List[NormalizedJob]:
+def normalize_jobs(jobs: List[FriendlyJob], company: str) -> List[NormalizedJob]:
     normalized_jobs = []
     for job in jobs:
-        normalized_job = friendly_job_to_normalized_job(job, company.value, _define_url(company, getattr(job, 'id')), None, None)
+        normalized_job = friendly_job_to_normalized_job(job, company, _define_url(company, getattr(job, 'id')), None, None)
         _normalize_seniority(normalized_job)
         _normalize_field(normalized_job)
         normalized_jobs.append(normalized_job)

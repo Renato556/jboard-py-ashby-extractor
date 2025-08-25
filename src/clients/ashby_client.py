@@ -4,16 +4,17 @@ import logging
 
 from requests import RequestException
 
-from models.enums.company_enum import CompanyEnum
 
 logger = logging.getLogger(__name__)
 
-def fetch_listings(company: CompanyEnum) -> str | None:
+def fetch_listings(company: str) -> str | None:
+    timeout = float(os.getenv('HTTP_TIMEOUT'))
+
     try:
         logger.info(f'Fetching jobs from ashby for company: {company}')
-        response = requests.get(os.getenv('DEFAULT_URL') + company.value)
+        response = requests.get(os.getenv('DEFAULT_URL') + company, timeout=timeout)
 
-        if response.status_code == 200:
+        if response.ok:
             logger.info(f'Jobs successfully fetched for company: {company}')
             return response.text
         else:
@@ -21,4 +22,7 @@ def fetch_listings(company: CompanyEnum) -> str | None:
             return None
     except RequestException as e:
         logger.error(f'[RequestException] Error getting jobs from ashby for company: {company} | Error {e}')
+        return None
+    except Exception as e:
+        logger.exception(f'[UnexpectedException] Error getting jobs from ashby for company: {company} | Error {e}')
         return None

@@ -16,7 +16,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # the application crashes without emitting any logs due to buffering.
 ENV PYTHONUNBUFFERED=1
 
-WORKDIR /app
+WORKDIR /src
 
 # Create a non-privileged user that the app will run under.
 # See https://docs.docker.com/go/dockerfile-user-best-practices/
@@ -30,11 +30,13 @@ RUN adduser \
     --uid "${UID}" \
     appuser
 
-# Após criar o usuário, garanta que /app pertença a ele
-RUN chown -R appuser:appuser /app
-ENV HOME=/app
+RUN chown -R appuser:appuser /src
+ENV HOME=/src
 
-# Download dependencies como root (ok)
+# Download dependencies as a separate step to take advantage of Docker's caching.
+# Leverage a cache mount to /root/.cache/pip to speed up subsequent builds.
+# Leverage a bind mount to requirements.txt to avoid having to copy them into
+# into this layer.
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,source=requirements.txt,target=requirements.txt \
     python -m pip install -r requirements.txt
@@ -46,5 +48,5 @@ USER appuser
 COPY --chown=appuser:appuser . .
 
 # Run the application.
-CMD python3 main.py
+CMD python -m src.main
 

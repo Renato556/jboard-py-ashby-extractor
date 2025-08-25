@@ -4,8 +4,8 @@ import time
 import schedule
 from dotenv import load_dotenv
 
-from models.enums.company_enum import CompanyEnum
-from services.jobs_service import get_jobs
+from src.models.enums.company_enum import CompanyEnum
+from src.services.jobs_service import get_jobs
 
 load_dotenv()
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def _run() -> None:
-    companies = [CompanyEnum.COMMURE_ATHELAS, CompanyEnum.EIGHTSLEEP, CompanyEnum.SUPABASE, CompanyEnum.DEEL, CompanyEnum.POSTHOG]
+    companies = os.getenv('COMPANIES').split(',')
     logger.info('Running application')
 
     for company in companies:

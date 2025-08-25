@@ -2,12 +2,12 @@ import json
 import logging
 from typing import List, Any
 
-from models.enums.company_enum import CompanyEnum
-from models.normalized_job import NormalizedJob
-from services.fetch_jobs_service import fetch_jobs
-from services.filter_jobs_service import filter_brazilian_friendly_jobs
-from services.normalize_jobs_service import normalize_jobs
-from utils.compare_dicts_util import compare_and_diff_strict
+from src.models.enums.company_enum import CompanyEnum
+from src.models.normalized_job import NormalizedJob
+from src.services.fetch_jobs_service import fetch_jobs
+from src.services.filter_jobs_service import filter_brazilian_friendly_jobs
+from src.services.normalize_jobs_service import normalize_jobs
+from src.utils.compare_dicts_util import compare_and_diff_strict
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +19,8 @@ def _check_file_exists(filename: str) -> None:
         open(filename, 'x')
 
 
-def _compare_to_last_execution(company: CompanyEnum, new_execution: List[NormalizedJob]) -> list[dict[str, Any]]:
-    filename = f'last_{company.value}.json'
+def _compare_to_last_execution(company: str, new_execution: List[NormalizedJob]) -> list[dict[str, Any]]:
+    filename = f'last_{company}.json'
 
     _check_file_exists(filename)
 
@@ -31,7 +31,7 @@ def _compare_to_last_execution(company: CompanyEnum, new_execution: List[Normali
         last_execution = json.dumps([])
 
     list_dict_last_execution = json.loads(last_execution)
-    list_dict_new_execution = [new_execution.to_dict() for new_execution in new_execution]
+    list_dict_new_execution = [item.to_dict() for item in new_execution]
 
     are_equal, differences = compare_and_diff_strict(list_dict_last_execution, list_dict_new_execution)
 
@@ -47,15 +47,26 @@ def _compare_to_last_execution(company: CompanyEnum, new_execution: List[Normali
     return differences
 
 
-def get_jobs(company: CompanyEnum) -> None:
+def get_jobs(company: str) -> None:
     all_job_listings = fetch_jobs(company)
 
     if not all_job_listings:
+        logger.info(f'No listings returned for company: {company}')
         return
 
     brazilian_friendly_jobs = filter_brazilian_friendly_jobs(all_job_listings, company)
+    if not brazilian_friendly_jobs:
+        logger.info(f'No brazilian friendly jobs for company: {company}')
+        return
+
     logger.info(f'Filtered brazilian friendly jobs for company: {company} | Jobs found: {len(brazilian_friendly_jobs)}')
     normalized_jobs = normalize_jobs(brazilian_friendly_jobs, company)
+
+    if not normalized_jobs:
+        logger.info(f'No normalized jobs for company: {company}')
+        return
+
     differences = _compare_to_last_execution(company, normalized_jobs)
+
     # POSTAR NA FILA
 

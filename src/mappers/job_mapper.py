@@ -1,10 +1,10 @@
-from typing import Any, Iterable, List
-from models.job import Job
-from models.friendly_job import FriendlyJob
-from models.normalized_job import NormalizedJob
+from typing import Any, Iterable, List, Mapping, Union
+from src.models.job import Job
+from src.models.friendly_job import FriendlyJob
+from src.models.normalized_job import NormalizedJob
 
 
-def _dict_to_job(data: dict[str, Any]) -> Job:
+def _dict_to_job(data: Mapping[str, Any]) -> Job:
     return Job(
         id=data.get('id'),
         title=data.get('title'),
@@ -31,20 +31,22 @@ def _dict_to_job(data: dict[str, Any]) -> Job:
     )
 
 
-def _dict_to_friendly_job(data: dict[str, Any]) -> FriendlyJob:
+def _dict_to_friendly_job(data: Mapping[str, Any]) -> FriendlyJob:
     job = _dict_to_job(data)
     return FriendlyJob(job, data.get('is_brazilian_friendly'))
 
 
-def dicts_to_jobs(items: Iterable[dict[str, Any]]) -> List[Job]:
+def dicts_to_jobs(items: Iterable[Mapping[str, Any]]) -> List[Job]:
     return [_dict_to_job(item) for item in items]
 
 
-def dicts_to_friendly_jobs(items: Iterable[dict[str, Any]]) -> List[FriendlyJob]:
+def dicts_to_friendly_jobs(items: Iterable[Mapping[str, Any]]) -> List[FriendlyJob]:
     return [_dict_to_friendly_job(item) for item in items]
 
 
-def job_to_friendly_job(job: Job | dict[str, Any]) -> FriendlyJob:
+def job_to_friendly_job(job: Union[Job, Mapping[str, Any]]) -> FriendlyJob:
+    if isinstance(job, dict):
+        job = _dict_to_job(job)
     return FriendlyJob(job, None)
 
 

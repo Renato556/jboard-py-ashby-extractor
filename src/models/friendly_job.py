@@ -1,4 +1,4 @@
-from models.job import Job
+from src.models.job import Job
 
 
 class FriendlyJob(Job):

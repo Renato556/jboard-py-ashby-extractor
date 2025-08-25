@@ -1,10 +1,10 @@
 import logging
-from typing import Any, List
+from typing import Any, Iterable, List
 
-from models.job import Job
-from models.friendly_job import FriendlyJob
-from models.enums.company_enum import CompanyEnum
-from mappers.job_mapper import job_to_friendly_job
+from src.models.job import Job
+from src.models.friendly_job import FriendlyJob
+from src.models.enums.company_enum import CompanyEnum
+from src.mappers.job_mapper import job_to_friendly_job
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +24,8 @@ REASON_DEEL_MATCH = '[deel_filter] Anywhere (LATAM) in location'
 REASON_DEEL_DEFAULT = 'deel_filter'
 
 
-def _lower(value: str | None) -> str:
-    return (value or '').strip().lower()
+def _lower(value: Any) -> str:
+    return (str(value) if value is not None else '').strip().lower()
 
 
 def _attr_or_key(obj: Any, name: str, default: Any = None) -> Any:
@@ -38,6 +38,14 @@ def _mark_brazilian_friendly(job_listing: FriendlyJob, is_friendly: bool, reason
     setattr(job_listing, IS_BRAZILIAN_FRIENDLY_KEY, {'isFriendly': is_friendly, 'reason': reason})
 
 
+def _has_brazil_in_secondary_locations(job_listing: FriendlyJob) -> bool:
+    secondary_locations = getattr(job_listing, 'secondaryLocations', None) or []
+    for location in secondary_locations:
+        if 'brazil' in _lower(_attr_or_key(location, 'locationName')):
+            return True
+    return False
+
+
 def _global_filter(job_listing: FriendlyJob) -> bool:
     title_lower = _lower(getattr(job_listing, 'title', None))
     location_lower = _lower(getattr(job_listing, 'locationName', None))
@@ -46,11 +54,9 @@ def _global_filter(job_listing: FriendlyJob) -> bool:
         _mark_brazilian_friendly(job_listing, True, REASON_GLOBAL_TITLE_OR_LOCATION)
         return True
 
-    secondary_locations = getattr(job_listing, 'secondaryLocations', None) or []
-    for location in secondary_locations:
-        if 'brazil' in _lower(_attr_or_key(location, 'locationName')):
-            _mark_brazilian_friendly(job_listing, True, REASON_GLOBAL_SECONDARY_LOCATION)
-            return True
+    if _has_brazil_in_secondary_locations(job_listing):
+        _mark_brazilian_friendly(job_listing, True, REASON_GLOBAL_SECONDARY_LOCATION)
+        return True
 
     _mark_brazilian_friendly(job_listing, False, REASON_GLOBAL_DEFAULT)
     return False
@@ -102,7 +108,7 @@ def _filter_by_company(job_listing: FriendlyJob, company: CompanyEnum) -> bool:
     return False
 
 
-def filter_brazilian_friendly_jobs(jobs: List[Job], company: CompanyEnum) -> List[FriendlyJob]:
+def filter_brazilian_friendly_jobs(jobs: Iterable[Job], company: CompanyEnum) -> List[FriendlyJob]:
     logger.info(f'Filtering brazilian friendly jobs for company: {company}')
 
     brazilian_friendly_jobs: List[FriendlyJob] = []
