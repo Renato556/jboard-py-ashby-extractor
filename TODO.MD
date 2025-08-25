@@ -1,0 +1,5 @@
+- Na primeira execução, buscar as vagas no banco de dados e popular os arquivos JSON
+- Inicialmente enviar os dados via requisição HTTP
+- Testes unitários
+- Observabilidade
+- Para escalabilidade, enviar vagas via websocket
