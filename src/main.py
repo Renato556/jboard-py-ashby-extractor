@@ -4,7 +4,6 @@ import time
 import schedule
 from dotenv import load_dotenv
 
-from src.models.enums.company_enum import CompanyEnum
 from src.services.jobs_service import get_jobs
 
 load_dotenv()
