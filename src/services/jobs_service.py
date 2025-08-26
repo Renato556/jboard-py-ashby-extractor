@@ -2,7 +2,6 @@ import json
 import logging
 from typing import List, Any
 
-from src.models.enums.company_enum import CompanyEnum
 from src.models.normalized_job import NormalizedJob
 from src.services.fetch_jobs_service import fetch_jobs
 from src.services.filter_jobs_service import filter_brazilian_friendly_jobs

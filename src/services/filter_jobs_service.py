@@ -3,7 +3,6 @@ from typing import Any, Iterable, List
 
 from src.models.job import Job
 from src.models.friendly_job import FriendlyJob
-from src.models.enums.company_enum import CompanyEnum
 from src.mappers.job_mapper import job_to_friendly_job
 
 logger = logging.getLogger(__name__)
@@ -94,21 +93,21 @@ def _deel_filter(job_listing: FriendlyJob) -> bool:
     return False
 
 
-def _filter_by_company(job_listing: FriendlyJob, company: CompanyEnum) -> bool:
+def _filter_by_company(job_listing: FriendlyJob, company: str) -> bool:
     if _global_filter(job_listing):
         return True
 
-    if company == CompanyEnum.EIGHTSLEEP:
+    if company == 'eightsleep':
         return _eightsleep_filter(job_listing)
-    elif company == CompanyEnum.SUPABASE:
+    elif company == 'supabase':
         return _supabase_filter(job_listing)
-    elif company == CompanyEnum.DEEL:
+    elif company == 'deel':
         return _deel_filter(job_listing)
 
     return False
 
 
-def filter_brazilian_friendly_jobs(jobs: Iterable[Job], company: CompanyEnum) -> List[FriendlyJob]:
+def filter_brazilian_friendly_jobs(jobs: Iterable[Job], company: str) -> List[FriendlyJob]:
     logger.info(f'Filtering brazilian friendly jobs for company: {company}')
 
     brazilian_friendly_jobs: List[FriendlyJob] = []

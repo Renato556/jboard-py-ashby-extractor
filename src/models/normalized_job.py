@@ -29,7 +29,7 @@ class NormalizedJob:
             'compensationTierSummary': self.compensation,
             'workplaceType': self.workplace_type,
             'officeLocation': self.office_location,
-            'is_brazilian_friendly': self.is_brazilian_friendly,
+            'isBrazilianFriendly': self.is_brazilian_friendly,
             'company': self.company,
             'url': self.url,
             'seniorityLevel': self.seniority_level,

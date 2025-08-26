@@ -26,7 +26,7 @@ def main() -> None:
     schedule.every(int(os.getenv('TIME_BETWEEN_EXECUTIONS'))).minutes.do(_run)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
     while True:
         schedule.run_pending()
