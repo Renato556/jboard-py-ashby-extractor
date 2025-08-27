@@ -2,6 +2,7 @@ import json
 import logging
 from typing import List, Any
 
+from src.clients.database_client import insert_job, update_job, delete_job
 from src.models.normalized_job import NormalizedJob
 from src.services.fetch_jobs_service import fetch_jobs
 from src.services.filter_jobs_service import filter_brazilian_friendly_jobs
@@ -9,6 +10,10 @@ from src.services.normalize_jobs_service import normalize_jobs
 from src.utils.compare_dicts_util import compare_and_diff_strict
 
 logger = logging.getLogger(__name__)
+
+def _convert_job_to_json(job) -> dict[str, Any]:
+    str_job = json.dumps(job)
+    return json.loads(str_job)
 
 def _check_file_exists(filename: str) -> None:
     try:
@@ -38,6 +43,15 @@ def _compare_to_last_execution(company: str, new_execution: List[NormalizedJob])
         logger.info(f'No new jobs for company: {company}')
         return []
     logger.info(f'Differences found for company: {company} | Differences found: {len(differences)}')
+
+    for job in differences:
+        json_job = _convert_job_to_json(job)
+        if job['action'] == 'INSERT':
+            insert_job(json_job)
+        elif job['action'] == 'UPDATE':
+            update_job(json_job)
+        elif job['action'] == 'DELETE':
+            delete_job(json_job)
 
     json_new_execution = json.dumps(list_dict_new_execution)
 

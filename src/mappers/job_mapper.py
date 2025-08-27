@@ -52,7 +52,6 @@ def job_to_friendly_job(job: Union[Job, Mapping[str, Any]]) -> FriendlyJob:
 
 def friendly_job_to_normalized_job(friendly_job: FriendlyJob, company: str, url: str, seniority_level: str | None, field: str | None) -> NormalizedJob:
     return NormalizedJob(
-        id=getattr(friendly_job, 'id', None),
         title=getattr(friendly_job, 'title', None),
         is_brazilian_friendly=getattr(friendly_job, 'is_brazilian_friendly', None),
         updated_at=getattr(friendly_job, 'updatedAt', None),
