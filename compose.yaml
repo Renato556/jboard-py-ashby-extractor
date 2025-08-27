@@ -8,11 +8,20 @@
 # database or a cache. For examples, see the Awesome Compose repository:
 # https://github.com/docker/awesome-compose
 services:
-  server:
+  ashby-extractor:
     build:
       context: .
     env_file:
       - .env
+    environment:
+      - API_URL=http://crud-server:8080
+    networks:
+      - app_net
+
+networks:
+  app_net:
+    external: true
+    name: crud-network
 
 # The commented out section below is an example of how to define a PostgreSQL
 # database that your application can use. `depends_on` tells Docker Compose to
