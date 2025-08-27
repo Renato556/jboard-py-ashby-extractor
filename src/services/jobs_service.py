@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import List, Any
+from typing import List, Any, Tuple
 
 from src.clients.database_client import insert_job, update_job, delete_job
 from src.models.normalized_job import NormalizedJob
@@ -23,9 +23,7 @@ def _check_file_exists(filename: str) -> None:
         open(filename, 'x')
 
 
-def _compare_to_last_execution(company: str, new_execution: List[NormalizedJob]) -> list[dict[str, Any]]:
-    filename = f'last_{company}.json'
-
+def _compare_to_last_execution(filename: str, company: str, new_execution: List[NormalizedJob]) -> Tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     _check_file_exists(filename)
 
     with open(filename, 'r') as file:
@@ -41,10 +39,13 @@ def _compare_to_last_execution(company: str, new_execution: List[NormalizedJob])
 
     if are_equal:
         logger.info(f'No new jobs for company: {company}')
-        return []
+        return [], []
     logger.info(f'Differences found for company: {company} | Differences found: {len(differences)}')
 
-    for job in differences:
+    return differences, list_dict_new_execution
+
+def _save_to_db(jobs) -> None:
+    for job in jobs:
         json_job = _convert_job_to_json(job)
         if job['action'] == 'INSERT':
             insert_job(json_job)
@@ -53,11 +54,11 @@ def _compare_to_last_execution(company: str, new_execution: List[NormalizedJob])
         elif job['action'] == 'DELETE':
             delete_job(json_job)
 
-    json_new_execution = json.dumps(list_dict_new_execution)
+def _save_to_file(filename, jobs) -> None:
+    json_new_execution = json.dumps(jobs)
 
     with open(filename, 'w') as file:
         file.write(json_new_execution)
-    return differences
 
 
 def get_jobs(company: str) -> None:
@@ -79,7 +80,13 @@ def get_jobs(company: str) -> None:
         logger.info(f'No normalized jobs for company: {company}')
         return
 
-    differences = _compare_to_last_execution(company, normalized_jobs)
+    filename = f'last_{company}.json'
+    differences, last_execution = _compare_to_last_execution(filename, company, normalized_jobs)
 
-    # POSTAR NA FILA
+    try:
+        _save_to_db(differences)
+        _save_to_file(filename, last_execution)
+    except Exception as e:
+        logger.exception(f'Error saving jobs to database for company: {company} | Error: {e}')
+        pass
 

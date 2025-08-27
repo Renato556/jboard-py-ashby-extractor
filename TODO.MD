@@ -1,6 +1,4 @@
-- Na primeira execução, buscar as vagas no banco de dados e popular os arquivos JSON
-- Inicialmente enviar os dados via requisição HTTP
-- Caso dê 500, tentar novamente
+- Buscar dados das vagas ao bater na URL de cada uma e trazer a descrição da vaga
 - Testes unitários
 - Observabilidade
 - Para escalabilidade, enviar vagas via websocket

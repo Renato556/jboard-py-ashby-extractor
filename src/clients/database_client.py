@@ -10,6 +10,7 @@ def insert_job(job):
 
     if response.status_code == 304:
         logger.info(f'Job already exists in database: {job}')
+        return
     elif not response.ok:
         raise Exception('Error inserting job')
 
@@ -21,6 +22,7 @@ def update_job(job):
 
     if response.status_code == 404:
         logger.info(f'Job does not exist in database: {job}')
+        return
     elif not response.ok:
         raise Exception('Error updating job')
 
@@ -32,6 +34,7 @@ def delete_job(job):
 
     if response.status_code == 404:
         logger.info(f'Job does not exist in database: {job}')
+        return
     elif not response.ok:
         raise Exception('Error deleting job')
 
