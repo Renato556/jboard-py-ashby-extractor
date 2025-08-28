@@ -1,3 +1,4 @@
+- Criar um volume, e quando estiver containerizado usar o volume para persistir os dados
 - Buscar dados das vagas ao bater na URL de cada uma e trazer a descrição da vaga
 - Testes unitários
 - Observabilidade
