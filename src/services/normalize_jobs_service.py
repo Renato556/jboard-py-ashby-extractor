@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def _define_url(company: str, job_id: str) -> str:
-    return f'{os.getenv('DEFAULT_URL')}{company}/{job_id}'
+    return f'{os.getenv('DEFAULT_URL')}{company.replace(' ', '%20')}/{job_id}'
 
 
 def _set_seniority(job: NormalizedJob, seniority: SeniorityEnum) -> None:
