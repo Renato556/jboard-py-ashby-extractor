@@ -63,9 +63,11 @@ def _global_filter(job_listing: FriendlyJob) -> bool:
 
 def _eightsleep_filter(job_listing: FriendlyJob) -> bool:
     location_lower = _lower(getattr(job_listing, 'locationName', None))
+
     if 'latam' in location_lower:
         _mark_brazilian_friendly(job_listing, True, REASON_EIGHTSLEEP_MATCH)
         return True
+
     _mark_brazilian_friendly(job_listing, False, REASON_EIGHTSLEEP_DEFAULT)
     return False
 
@@ -89,6 +91,7 @@ def _deel_filter(job_listing: FriendlyJob) -> bool:
     if 'anywhere (latam)' in _lower(getattr(job_listing, 'locationName', None)):
         _mark_brazilian_friendly(job_listing, True, REASON_DEEL_MATCH)
         return True
+
     _mark_brazilian_friendly(job_listing, False, REASON_DEEL_DEFAULT)
     return False
 

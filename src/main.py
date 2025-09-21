@@ -1,7 +1,6 @@
 import logging
 import os
 import time
-import schedule
 from dotenv import load_dotenv
 
 from src.services.jobs_service import get_jobs
@@ -11,23 +10,25 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=lo
 logger = logging.getLogger(__name__)
 
 
-def _run() -> None:
+def run() -> None:
     companies = os.getenv('COMPANIES').split(',')
-    logger.info('Running application')
+    logger.info('Starting job extraction process')
 
     for company in companies:
+        logger.info(f'Processing company: {company}')
         get_jobs(company)
         time.sleep(3)
+    
+    logger.info('Job extraction process completed successfully')
 
 
 def main() -> None:
-    logger.info('Starting application')
-    _run()
-    schedule.every(int(os.getenv('TIME_BETWEEN_EXECUTIONS'))).minutes.do(_run)
+    try:
+        run()
+    except Exception as e:
+        logger.exception(f'Error during job extraction: {e}')
+        raise
 
 
 if __name__ == '__main__':
     main()
-    while True:
-        schedule.run_pending()
-        time.sleep(1)

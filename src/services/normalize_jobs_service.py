@@ -1,6 +1,7 @@
 import logging
 import os
 from typing import List
+from dotenv import load_dotenv
 
 from src.mappers.job_mapper import friendly_job_to_normalized_job
 from src.models.enums.field_enum import FieldEnum
@@ -8,7 +9,7 @@ from src.models.enums.seniority_enum import SeniorityEnum
 from src.models.friendly_job import FriendlyJob
 from src.models.normalized_job import NormalizedJob
 
-
+load_dotenv()
 logger = logging.getLogger(__name__)
 
 

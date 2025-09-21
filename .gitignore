@@ -1,5 +1,6 @@
 .idea
 .venv
+.coverage
 
 # auto generated files
 *.pyo

@@ -1,10 +1,11 @@
 import requests
 import os
 import logging
+from dotenv import load_dotenv
 
 from requests import RequestException
 
-
+load_dotenv()
 logger = logging.getLogger(__name__)
 
 def fetch_listings(company: str) -> str | None:

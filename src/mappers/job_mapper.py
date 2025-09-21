@@ -4,29 +4,36 @@ from src.models.friendly_job import FriendlyJob
 from src.models.normalized_job import NormalizedJob
 
 
+def _clean_string(value: Any) -> Any:
+    """Remove espaços em branco do início e fim de strings"""
+    if isinstance(value, str):
+        return value.strip()
+    return value
+
+
 def _dict_to_job(data: Mapping[str, Any]) -> Job:
     return Job(
-        id=data.get('id'),
-        title=data.get('title'),
-        updatedAt=data.get('updatedAt'),
+        id=_clean_string(data.get('id')),
+        title=_clean_string(data.get('title')),
+        updatedAt=_clean_string(data.get('updatedAt')),
         suppressDescriptionOpening=data.get('suppressDescriptionOpening'),
         suppressDescriptionClosing=data.get('suppressDescriptionClosing'),
-        departmentId=data.get('departmentId'),
-        departmentName=data.get('departmentName'),
-        locationId=data.get('locationId'),
-        locationName=data.get('locationName'),
-        workplaceType=data.get('workplaceType'),
-        employmentType=data.get('employmentType'),
+        departmentId=_clean_string(data.get('departmentId')),
+        departmentName=_clean_string(data.get('departmentName')),
+        locationId=_clean_string(data.get('locationId')),
+        locationName=_clean_string(data.get('locationName')),
+        workplaceType=_clean_string(data.get('workplaceType')),
+        employmentType=_clean_string(data.get('employmentType')),
         isListed=data.get('isListed'),
-        jobId=data.get('jobId'),
-        jobRequisitionId=data.get('jobRequisitionId'),
-        teamId=data.get('teamId'),
-        teamName=data.get('teamName'),
-        publishedDate=data.get('publishedDate'),
-        applicationDeadline=data.get('applicationDeadline'),
-        shouldDisplayCompensationOnJobBoard=data.get('shouldDisplayCompensationOnJobBoard'),
+        jobId=_clean_string(data.get('jobId')),
+        jobRequisitionId=_clean_string(data.get('jobRequisitionId')),
+        teamId=_clean_string(data.get('teamId')),
+        teamName=_clean_string(data.get('teamName')),
+        publishedDate=_clean_string(data.get('publishedDate')),
+        applicationDeadline=_clean_string(data.get('applicationDeadline')),
+        shouldDisplayCompensationOnJobBoard=_clean_string(data.get('shouldDisplayCompensationOnJobBoard')),
         secondaryLocations=data.get('secondaryLocations') or [],
-        compensationTierSummary=data.get('compensationTierSummary'),
+        compensationTierSummary=_clean_string(data.get('compensationTierSummary')),
         userRoles=data.get('userRoles') or [],
     )
 
@@ -52,17 +59,18 @@ def job_to_friendly_job(job: Union[Job, Mapping[str, Any]]) -> FriendlyJob:
 
 def friendly_job_to_normalized_job(friendly_job: FriendlyJob, company: str, url: str, seniority_level: str | None, field: str | None) -> NormalizedJob:
     return NormalizedJob(
-        title=getattr(friendly_job, 'title', None),
+        id=_clean_string(getattr(friendly_job, 'id', None)),
+        title=_clean_string(getattr(friendly_job, 'title', None)),
         is_brazilian_friendly=getattr(friendly_job, 'is_brazilian_friendly', None),
-        updated_at=getattr(friendly_job, 'updatedAt', None),
-        employment_type=getattr(friendly_job, 'employmentType', None),
-        published_date=getattr(friendly_job, 'publishedDate', None),
-        application_deadline=getattr(friendly_job, 'applicationDeadline', None),
-        compensation_tier_summary=getattr(friendly_job, 'compensationTierSummary', None),
-        workplace_type=getattr(friendly_job, 'workplaceType', None),
+        updated_at=_clean_string(getattr(friendly_job, 'updatedAt', None)),
+        employment_type=_clean_string(getattr(friendly_job, 'employmentType', None)),
+        published_date=_clean_string(getattr(friendly_job, 'publishedDate', None)),
+        application_deadline=_clean_string(getattr(friendly_job, 'applicationDeadline', None)),
+        compensation_tier_summary=_clean_string(getattr(friendly_job, 'compensationTierSummary', None)),
+        workplace_type=_clean_string(getattr(friendly_job, 'workplaceType', None)),
         office_location=None,
-        company=company,
-        url=url,
-        seniority_level=seniority_level,
-        field=field
+        company=_clean_string(company),
+        url=_clean_string(url),
+        seniority_level=_clean_string(seniority_level),
+        field=_clean_string(field)
     )
