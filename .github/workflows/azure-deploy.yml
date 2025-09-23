@@ -108,7 +108,7 @@ jobs:
           --query properties.configuration.ingress.fqdn -o tsv 2>/dev/null || echo "")
         
         if [ -n "$API_FQDN" ]; then
-          INTERNAL_API_URL="https://$API_FQDN"
+          INTERNAL_API_URL="https://$API_FQDN/v1"
           echo "✅ API descoberta: $INTERNAL_API_URL"
         else
           echo "⚠️ Container App não encontrado, usando API_URL dos secrets"
