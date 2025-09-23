@@ -1,0 +1,146 @@
+name: Job Extractor - Ashby - Azure Deploy
+
+on:
+  schedule:
+    - cron: '0 6,18 * * *'  # Executa às 6h e 18h UTC (a cada 12h)
+  push:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+env:
+  AZURE_CONTAINER_REGISTRY: jboardregistry
+  RESOURCE_GROUP: jboard-microservices-rg
+  IMAGE_NAME: jboard-ashby-extractor
+  LOG_ANALYTICS_WORKSPACE: jboard-logs
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Get Container Registry Name
+      id: registry
+      run: |
+        # Verificar se o registry existe, caso contrário usar um com sufixo
+        if az acr show --name ${{ env.AZURE_CONTAINER_REGISTRY }} --resource-group ${{ env.RESOURCE_GROUP }} > /dev/null 2>&1; then
+          echo "registry_name=${{ env.AZURE_CONTAINER_REGISTRY }}" >> $GITHUB_OUTPUT
+        else
+          # Procurar registry com prefixo jboardregistry
+          REGISTRY_NAME=$(az acr list --resource-group ${{ env.RESOURCE_GROUP }} --query "[?starts_with(name, 'jboardregistry')].name" -o tsv | head -1)
+          if [ -n "$REGISTRY_NAME" ]; then
+            echo "registry_name=$REGISTRY_NAME" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Nenhum Container Registry encontrado"
+            exit 1
+          fi
+        fi
+
+    - name: Build and push Docker image
+      if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+      run: |
+        REGISTRY_NAME="${{ steps.registry.outputs.registry_name }}"
+        
+        # Login to Azure Container Registry
+        az acr login --name $REGISTRY_NAME
+        
+        # Build and push image with multi-stage optimization
+        docker build \
+          --build-arg TARGETARCH=amd64 \
+          -t $REGISTRY_NAME.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+          -t $REGISTRY_NAME.azurecr.io/${{ env.IMAGE_NAME }}:latest \
+          .
+        
+        docker push $REGISTRY_NAME.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        docker push $REGISTRY_NAME.azurecr.io/${{ env.IMAGE_NAME }}:latest
+        
+        echo "✅ Imagem publicada: $REGISTRY_NAME.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+
+    - name: Get Log Analytics workspace info
+      id: logs
+      run: |
+        # Get Log Analytics workspace info
+        echo "📊 Obtendo informações do Log Analytics..."
+        WORKSPACE_ID=$(az monitor.log-analytics workspace show \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --workspace-name ${{ env.LOG_ANALYTICS_WORKSPACE }} \
+          --query customerId -o tsv)
+        
+        WORKSPACE_KEY=$(az monitor.log-analytics workspace get-shared-keys \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --workspace-name ${{ env.LOG_ANALYTICS_WORKSPACE }} \
+          --query primarySharedKey -o tsv)
+        
+        echo "workspace_id=$WORKSPACE_ID" >> $GITHUB_OUTPUT
+        echo "workspace_key=$WORKSPACE_KEY" >> $GITHUB_OUTPUT
+
+    - name: Run Job Extractor
+      run: |
+        REGISTRY_NAME="${{ steps.registry.outputs.registry_name }}"
+        CONTAINER_GROUP_NAME="jboard-extractor-$(date +%Y%m%d-%H%M%S)"
+        
+        echo "🚀 Executando extractor de jobs..."
+        echo "   • Container: $CONTAINER_GROUP_NAME"
+        echo "   • Imagem: $REGISTRY_NAME.azurecr.io/${{ env.IMAGE_NAME }}:latest"
+        
+        # Run the container
+        az container create \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --name $CONTAINER_GROUP_NAME \
+          --image $REGISTRY_NAME.azurecr.io/${{ env.IMAGE_NAME }}:latest \
+          --registry-login-server $REGISTRY_NAME.azurecr.io \
+          --vnet jboard-vnet \
+          --subnet jboard-subnet \
+          --environment-variables \
+            COMPANIES="${{ secrets.COMPANIES }}" \
+            API_URL="${{ secrets.API_URL }}" \
+            API_TIMEOUT="${{ secrets.API_TIMEOUT }}" \
+            ASHBY_TIMEOUT="${{ secrets.ASHBY_TIMEOUT }}" \
+            DEFAULT_URL="${{ secrets.DEFAULT_URL }}" \
+          --restart-policy Never \
+          --cpu 0.5 \
+          --memory 1 \
+          --os-type Linux \
+          --location ${{ secrets.AZURE_LOCATION }} \
+          --log-analytics-workspace ${{ steps.logs.outputs.workspace_id }} \
+          --log-analytics-workspace-key ${{ steps.logs.outputs.workspace_key }}
+        
+        echo "⏳ Aguardando conclusão da execução..."
+        
+        # Wait for completion and get logs
+        az container attach --resource-group ${{ env.RESOURCE_GROUP }} --name $CONTAINER_GROUP_NAME || true
+        
+        # Get final status
+        STATUS=$(az container show \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --name $CONTAINER_GROUP_NAME \
+          --query instanceView.state \
+          --output tsv)
+        
+        echo "📊 Status final do container: $STATUS"
+        
+        # Clean up - delete the container group
+        echo "🧹 Limpando container group..."
+        az container delete \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --name $CONTAINER_GROUP_NAME \
+          --yes
+
+    - name: Show execution info
+      run: |
+        echo "📋 Informações da execução:"
+        echo "   • Resource Group: ${{ env.RESOURCE_GROUP }}"
+        echo "   • Imagem: ${{ steps.registry.outputs.registry_name }}.azurecr.io/${{ env.IMAGE_NAME }}:latest"
+        echo "   • Log Analytics: ${{ env.LOG_ANALYTICS_WORKSPACE }}"
+        echo "   • Commit: ${{ github.sha }}"
+        echo ""
+        echo "🔍 Para verificar logs no Log Analytics:"
+        echo "   ContainerInstanceLog_CL | where ContainerGroup_s contains 'jboard-extractor' | order by TimeGenerated desc"

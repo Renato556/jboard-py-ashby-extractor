@@ -9,7 +9,7 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 def fetch_listings(company: str) -> str | None:
-    timeout = float(os.getenv('HTTP_TIMEOUT'))
+    timeout = float(os.getenv('ASHBY_TIMEOUT'))
 
     try:
         logger.info(f'Fetching jobs from ashby for company: {company}')
