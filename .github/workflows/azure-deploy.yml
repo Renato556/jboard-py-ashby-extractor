@@ -191,11 +191,11 @@ jobs:
         echo "📊 Status final do container: $STATUS"
         
         # Clean up - delete the container group
-        echo "🧹 Limpando container group..."
-        az container delete \
-          --resource-group ${{ env.RESOURCE_GROUP }} \
-          --name $CONTAINER_GROUP_NAME \
-          --yes
+#        echo "🧹 Limpando container group..."
+#        az container delete \
+#          --resource-group ${{ env.RESOURCE_GROUP }} \
+#          --name $CONTAINER_GROUP_NAME \
+#          --yes
 
     - name: Show execution info
       run: |
