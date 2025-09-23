@@ -92,12 +92,12 @@ jobs:
       run: |
         # Get Log Analytics workspace info
         echo "📊 Obtendo informações do Log Analytics..."
-        WORKSPACE_ID=$(az monitor.log-analytics workspace show \
+        WORKSPACE_ID=$(az monitor log-analytics workspace show \
           --resource-group ${{ env.RESOURCE_GROUP }} \
           --workspace-name ${{ env.LOG_ANALYTICS_WORKSPACE }} \
           --query customerId -o tsv)
         
-        WORKSPACE_KEY=$(az monitor.log-analytics workspace get-shared-keys \
+        WORKSPACE_KEY=$(az monitor log-analytics workspace get-shared-keys \
           --resource-group ${{ env.RESOURCE_GROUP }} \
           --workspace-name ${{ env.LOG_ANALYTICS_WORKSPACE }} \
           --query primarySharedKey -o tsv)
