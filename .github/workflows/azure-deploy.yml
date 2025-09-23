@@ -1,10 +1,10 @@
 name: Job Extractor - Ashby - Azure Deploy
 
 on:
-  schedule:
-    - cron: '0 6,18 * * *'  # Executa às 6h e 18h UTC (a cada 12h)
-  push:
-    branches: [ master, main ]
+#   schedule:
+# #     - cron: '0 6,18 * * *'  # Executa às 6h e 18h UTC (a cada 12h)
+#   push:
+#     branches: [ master, main ]
   workflow_dispatch:
 
 env:
