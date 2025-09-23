@@ -100,6 +100,45 @@ jobs:
         ACR_USERNAME=$(az acr credential show --name $REGISTRY_NAME --query username -o tsv)
         ACR_PASSWORD=$(az acr credential show --name $REGISTRY_NAME --query passwords[0].value -o tsv)
         
+        # Check if VNet exists and get available address space
+        echo "🌐 Verificando VNet e subnet para Container Instances..."
+        VNET_INFO=$(az network vnet show \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --name jboard-vnet \
+          --query "addressSpace.addressPrefixes[0]" -o tsv 2>/dev/null || echo "")
+        
+        if [ -z "$VNET_INFO" ]; then
+          echo "❌ VNet jboard-vnet não encontrada"
+          exit 1
+        fi
+        
+        # Check if subnet exists
+        SUBNET_EXISTS=$(az network vnet subnet show \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --vnet-name jboard-vnet \
+          --name container-instances-subnet \
+          --query name -o tsv 2>/dev/null || echo "")
+        
+        if [ -z "$SUBNET_EXISTS" ]; then
+          echo "📡 Criando subnet dedicada para Container Instances..."
+          # Try different address ranges to avoid conflicts
+          for range in "10.0.10.0/24" "10.0.20.0/24" "10.0.30.0/24"; do
+            if az network vnet subnet create \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --vnet-name jboard-vnet \
+              --name container-instances-subnet \
+              --address-prefixes $range \
+              --delegations Microsoft.ContainerInstance/containerGroups 2>/dev/null; then
+              echo "✅ Subnet criada com range $range"
+              break
+            else
+              echo "⚠️ Range $range já em uso, tentando próximo..."
+            fi
+          done
+        else
+          echo "✅ Subnet container-instances-subnet já existe"
+        fi
+        
         # Run the container
         az container create \
           --resource-group ${{ env.RESOURCE_GROUP }} \
@@ -109,7 +148,7 @@ jobs:
           --registry-username $ACR_USERNAME \
           --registry-password $ACR_PASSWORD \
           --vnet jboard-vnet \
-          --subnet jboard-subnet \
+          --subnet container-instances-subnet \
           --environment-variables \
             COMPANIES="${{ secrets.COMPANIES }}" \
             API_URL="${{ secrets.API_URL }}" \
