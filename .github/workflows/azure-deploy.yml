@@ -100,21 +100,6 @@ jobs:
         ACR_USERNAME=$(az acr credential show --name $REGISTRY_NAME --query username -o tsv)
         ACR_PASSWORD=$(az acr credential show --name $REGISTRY_NAME --query passwords[0].value -o tsv)
         
-        # Get Container App internal URL
-        echo "🔍 Descobrindo endpoint da API Container App..."
-        API_FQDN=$(az containerapp show \
-          --name jboard-go-crud \
-          --resource-group ${{ env.RESOURCE_GROUP }} \
-          --query properties.configuration.ingress.fqdn -o tsv 2>/dev/null || echo "")
-        
-        if [ -n "$API_FQDN" ]; then
-          INTERNAL_API_URL="https://$API_FQDN/v1"
-          echo "✅ API descoberta: $INTERNAL_API_URL"
-        else
-          echo "⚠️ Container App não encontrado, usando API_URL dos secrets"
-          INTERNAL_API_URL="${{ secrets.API_URL }}"
-        fi
-        
         # Check if VNet exists and get available address space
         echo "🌐 Verificando VNet e subnet para Container Instances..."
         VNET_INFO=$(az network vnet show \
@@ -125,33 +110,6 @@ jobs:
         if [ -z "$VNET_INFO" ]; then
           echo "❌ VNet jboard-vnet não encontrada"
           exit 1
-        fi
-        
-        # Check if subnet exists
-        SUBNET_EXISTS=$(az network vnet subnet show \
-          --resource-group ${{ env.RESOURCE_GROUP }} \
-          --vnet-name jboard-vnet \
-          --name container-instances-subnet \
-          --query name -o tsv 2>/dev/null || echo "")
-        
-        if [ -z "$SUBNET_EXISTS" ]; then
-          echo "📡 Criando subnet dedicada para Container Instances..."
-          # Try different address ranges to avoid conflicts
-          for range in "10.0.10.0/24" "10.0.20.0/24" "10.0.30.0/24"; do
-            if az network vnet subnet create \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
-              --vnet-name jboard-vnet \
-              --name container-instances-subnet \
-              --address-prefixes $range \
-              --delegations Microsoft.ContainerInstance/containerGroups 2>/dev/null; then
-              echo "✅ Subnet criada com range $range"
-              break
-            else
-              echo "⚠️ Range $range já em uso, tentando próximo..."
-            fi
-          done
-        else
-          echo "✅ Subnet container-instances-subnet já existe"
         fi
         
         # Run the container
@@ -166,7 +124,7 @@ jobs:
           --subnet container-instances-subnet \
           --environment-variables \
             COMPANIES="${{ secrets.COMPANIES }}" \
-            API_URL="$INTERNAL_API_URL" \
+            API_URL="${{ secrets.API_URL }}" \
             API_TIMEOUT="${{ secrets.API_TIMEOUT }}" \
             ASHBY_TIMEOUT="${{ secrets.ASHBY_TIMEOUT }}" \
             DEFAULT_URL="${{ secrets.DEFAULT_URL }}" \
