@@ -64,8 +64,8 @@ jobs:
         
         echo "✅ Imagem publicada: $REGISTRY_NAME.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}"
 
-    - name: Instalar extensão do Azure Monitor
-      run: az extension add --name monitor
+    - name: Instalar extensão do Azure Log Analytics
+      run: az extension add --name log-analytics
 
     - name: Get Log Analytics workspace info
       id: logs
