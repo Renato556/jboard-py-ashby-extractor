@@ -27,6 +27,23 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run unit tests
+      run: |
+        echo "🧪 Executando testes unitários..."
+        python -m pytest test/ -v --tb=short
+        echo "✅ Todos os testes passaram!"
+
     - name: Get Container Registry Name
       id: registry
       run: |
@@ -64,20 +81,17 @@ jobs:
         
         echo "✅ Imagem publicada: $REGISTRY_NAME.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}"
 
-    - name: Instalar extensão do Azure Log Analytics
-      run: az extension add --name log-analytics
-
     - name: Get Log Analytics workspace info
       id: logs
       run: |
         # Get Log Analytics workspace info
         echo "📊 Obtendo informações do Log Analytics..."
-        WORKSPACE_ID=$(az monitor.log-analytics workspace show \
+        WORKSPACE_ID=$(az monitor log-analytics workspace show \
           --resource-group ${{ env.RESOURCE_GROUP }} \
           --workspace-name ${{ env.LOG_ANALYTICS_WORKSPACE }} \
           --query customerId -o tsv)
         
-        WORKSPACE_KEY=$(az monitor.log-analytics workspace get-shared-keys \
+        WORKSPACE_KEY=$(az monitor log-analytics workspace get-shared-keys \
           --resource-group ${{ env.RESOURCE_GROUP }} \
           --workspace-name ${{ env.LOG_ANALYTICS_WORKSPACE }} \
           --query primarySharedKey -o tsv)
