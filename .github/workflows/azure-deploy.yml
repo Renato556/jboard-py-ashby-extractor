@@ -47,8 +47,8 @@ jobs:
         DEFAULT_URL: "http://test-default:8080"
       run: |
         echo "🧪 Executando testes unitários..."
-        python -m pytest test/ -v --tb=short
-        echo "✅ Todos os testes passaram!"
+        python -m pytest test/ -v --tb=short --cov-fail-under=90
+        echo "✅ Todos os testes passaram com cobertura >= 90%!"
 
     - name: Get Container Registry Name
       id: registry
