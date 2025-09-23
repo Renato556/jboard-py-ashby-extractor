@@ -11,7 +11,6 @@ env:
   AZURE_CONTAINER_REGISTRY: jboardregistry
   RESOURCE_GROUP: jboard-microservices-rg
   IMAGE_NAME: jboard-ashby-extractor
-  LOG_ANALYTICS_WORKSPACE: jboard-logs
 
 jobs:
   build-and-deploy:
@@ -87,24 +86,6 @@ jobs:
         
         echo "✅ Imagem publicada: $REGISTRY_NAME.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}"
 
-    - name: Get Log Analytics workspace info
-      id: logs
-      run: |
-        # Get Log Analytics workspace info
-        echo "📊 Obtendo informações do Log Analytics..."
-        WORKSPACE_ID=$(az monitor log-analytics workspace show \
-          --resource-group ${{ env.RESOURCE_GROUP }} \
-          --workspace-name ${{ env.LOG_ANALYTICS_WORKSPACE }} \
-          --query customerId -o tsv)
-        
-        WORKSPACE_KEY=$(az monitor log-analytics workspace get-shared-keys \
-          --resource-group ${{ env.RESOURCE_GROUP }} \
-          --workspace-name ${{ env.LOG_ANALYTICS_WORKSPACE }} \
-          --query primarySharedKey -o tsv)
-        
-        echo "workspace_id=$WORKSPACE_ID" >> $GITHUB_OUTPUT
-        echo "workspace_key=$WORKSPACE_KEY" >> $GITHUB_OUTPUT
-
     - name: Run Job Extractor
       run: |
         REGISTRY_NAME="${{ steps.registry.outputs.registry_name }}"
@@ -114,12 +95,19 @@ jobs:
         echo "   • Container: $CONTAINER_GROUP_NAME"
         echo "   • Imagem: $REGISTRY_NAME.azurecr.io/${{ env.IMAGE_NAME }}:latest"
         
+        # Get ACR credentials
+        echo "🔑 Obtendo credenciais do Container Registry..."
+        ACR_USERNAME=$(az acr credential show --name $REGISTRY_NAME --query username -o tsv)
+        ACR_PASSWORD=$(az acr credential show --name $REGISTRY_NAME --query passwords[0].value -o tsv)
+        
         # Run the container
         az container create \
           --resource-group ${{ env.RESOURCE_GROUP }} \
           --name $CONTAINER_GROUP_NAME \
           --image $REGISTRY_NAME.azurecr.io/${{ env.IMAGE_NAME }}:latest \
           --registry-login-server $REGISTRY_NAME.azurecr.io \
+          --registry-username $ACR_USERNAME \
+          --registry-password $ACR_PASSWORD \
           --vnet jboard-vnet \
           --subnet jboard-subnet \
           --environment-variables \
@@ -132,9 +120,7 @@ jobs:
           --cpu 0.5 \
           --memory 1 \
           --os-type Linux \
-          --location ${{ secrets.AZURE_LOCATION }} \
-          --log-analytics-workspace ${{ steps.logs.outputs.workspace_id }} \
-          --log-analytics-workspace-key ${{ steps.logs.outputs.workspace_key }}
+          --location ${{ secrets.AZURE_LOCATION }}
         
         echo "⏳ Aguardando conclusão da execução..."
         
@@ -162,8 +148,4 @@ jobs:
         echo "📋 Informações da execução:"
         echo "   • Resource Group: ${{ env.RESOURCE_GROUP }}"
         echo "   • Imagem: ${{ steps.registry.outputs.registry_name }}.azurecr.io/${{ env.IMAGE_NAME }}:latest"
-        echo "   • Log Analytics: ${{ env.LOG_ANALYTICS_WORKSPACE }}"
         echo "   • Commit: ${{ github.sha }}"
-        echo ""
-        echo "🔍 Para verificar logs no Log Analytics:"
-        echo "   ContainerInstanceLog_CL | where ContainerGroup_s contains 'jboard-extractor' | order by TimeGenerated desc"
