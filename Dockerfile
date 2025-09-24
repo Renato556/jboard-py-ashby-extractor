@@ -47,6 +47,8 @@ USER appuser
 # Copy the source code into the container (já com o dono correto).
 COPY --chown=appuser:appuser . .
 
-# Run the application.
-CMD python -m src.main
+# Create a script to run the job periodically (every 6 hours)
+RUN echo '#!/bin/bash\nwhile true; do\n  echo "Starting job extraction at $(date)"\n  python -m src.main\n  echo "Job completed at $(date). Sleeping for 6 hours..."\n  sleep 21600\ndone' > /src/run_periodic.sh && chmod +x /src/run_periodic.sh
 
+# Run the periodic job
+CMD ["/bin/bash", "/src/run_periodic.sh"]
