@@ -95,7 +95,7 @@ jobs:
             --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
             --env-vars \
               COMPANIES="${{ secrets.COMPANIES }}" \
-              API_URL="$API_URL" \
+              API_URL="${{ secrets.API_URL }}" \
               DEFAULT_URL="${{ secrets.DEFAULT_URL }}" \
               API_TIMEOUT="${{ secrets.API_TIMEOUT }}" \
               ASHBY_TIMEOUT="${{ secrets.ASHBY_TIMEOUT }}" \
