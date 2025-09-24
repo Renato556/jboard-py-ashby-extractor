@@ -27,7 +27,6 @@ def main() -> None:
         run()
     except Exception as e:
         logger.exception(f'Error during job extraction: {e}')
-        raise
 
 
 if __name__ == '__main__':

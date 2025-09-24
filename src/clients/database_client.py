@@ -41,7 +41,7 @@ class DatabaseClient:
 
         return session
 
-    def _make_request(self, method: str, endpoint: str, data: Optional[dict] = None) -> Response | None:
+    def _make_request(self, method: str, endpoint: str, data: Optional[dict] = None) -> Response:
         url = f'{self.api_url}/{endpoint.lstrip("/")}'
 
         try:
@@ -58,13 +58,13 @@ class DatabaseClient:
 
         except requests.exceptions.Timeout:
             logger.error(f'API timeout after {self.timeout} seconds: {url}')
-            return
+            raise Exception(f'API timeout after {self.timeout} seconds')
         except requests.exceptions.ConnectionError:
             logger.error(f'Failed to connect to API - check network connectivity: {url}')
-            return
+            raise Exception('Failed to connect to API - check network connectivity')
         except requests.exceptions.RequestException as e:
             logger.error(f'Request failed: {url}: {e}')
-            return
+            raise Exception(f'Request failed: {e}')
 
 _client = DatabaseClient()
 
@@ -79,7 +79,7 @@ def insert_job(job):
         return
     elif not response.ok:
         logger.error(f'Error inserting job: {response.status_code} - {response.text}')
-        return
+        raise Exception(f'Error inserting job: {response.status_code}')
 
 def health_check() -> bool:
     try:
