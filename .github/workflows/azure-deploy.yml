@@ -79,6 +79,21 @@ jobs:
 
     - name: Deploy to Azure Container Apps
       run: |
+        # Get internal URL of jboard-go-crud for API_URL
+        echo "Discovering jboard-go-crud internal URL..."
+        CRUD_INTERNAL_URL=$(az containerapp show \
+          --name jboard-go-crud \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --query "properties.configuration.ingress.fqdn" -o tsv 2>/dev/null)
+        
+        if [ -n "$CRUD_INTERNAL_URL" ] && [ "$CRUD_INTERNAL_URL" != "null" ]; then
+          API_URL="https://$CRUD_INTERNAL_URL/v1"
+          echo "Found jboard-go-crud internal URL: $API_URL"
+        else
+          API_URL="${{ secrets.API_URL }}"
+          echo "Warning: Could not find jboard-go-crud URL, using fallback: $API_URL"
+        fi
+
         # Check if container app exists
         if az containerapp show --name ${{ env.CONTAINER_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} &>/dev/null; then
           echo "Container App exists, updating..."
@@ -88,7 +103,7 @@ jobs:
             --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
             --set-env-vars \
               COMPANIES="${{ secrets.COMPANIES }}" \
-              API_URL="${{ secrets.API_URL }}" \
+              API_URL="$API_URL" \
               DEFAULT_URL="${{ secrets.DEFAULT_URL }}" \
               API_TIMEOUT="${{ secrets.API_TIMEOUT }}" \
               ASHBY_TIMEOUT="${{ secrets.ASHBY_TIMEOUT }}"
@@ -101,7 +116,7 @@ jobs:
             --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
             --env-vars \
               COMPANIES="${{ secrets.COMPANIES }}" \
-              API_URL="${{ secrets.API_URL }}" \
+              API_URL="$API_URL" \
               DEFAULT_URL="${{ secrets.DEFAULT_URL }}" \
               API_TIMEOUT="${{ secrets.API_TIMEOUT }}" \
               ASHBY_TIMEOUT="${{ secrets.ASHBY_TIMEOUT }}" \
