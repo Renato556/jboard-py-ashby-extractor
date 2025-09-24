@@ -3,6 +3,7 @@ import logging
 from typing import Optional
 
 import requests
+from requests import Response
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from dotenv import load_dotenv
@@ -40,7 +41,7 @@ class DatabaseClient:
 
         return session
 
-    def _make_request(self, method: str, endpoint: str, data: Optional[dict] = None) -> requests.Response:
+    def _make_request(self, method: str, endpoint: str, data: Optional[dict] = None) -> Response | None:
         url = f'{self.api_url}/{endpoint.lstrip("/")}'
 
         try:
@@ -56,14 +57,14 @@ class DatabaseClient:
             return response
 
         except requests.exceptions.Timeout:
-            logger.error(f'Timeout error calling {url}')
-            raise Exception(f'API timeout after {self.timeout} seconds')
+            logger.error(f'API timeout after {self.timeout} seconds: {url}')
+            return
         except requests.exceptions.ConnectionError:
-            logger.error(f'Connection error calling {url}')
-            raise Exception('Failed to connect to API - check network connectivity')
+            logger.error(f'Failed to connect to API - check network connectivity: {url}')
+            return
         except requests.exceptions.RequestException as e:
-            logger.error(f'Request error calling {url}: {e}')
-            raise Exception(f'Request failed: {e}')
+            logger.error(f'Request failed: {url}: {e}')
+            return
 
 _client = DatabaseClient()
 
@@ -78,7 +79,7 @@ def insert_job(job):
         return
     elif not response.ok:
         logger.error(f'Error inserting job: {response.status_code} - {response.text}')
-        raise Exception(f'Error inserting job: {response.status_code}')
+        return
 
 def health_check() -> bool:
     try:
