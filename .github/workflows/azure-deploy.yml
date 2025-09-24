@@ -42,7 +42,7 @@ jobs:
 
     - name: Run tests
       run: |
-        python -m pytest test/ -v --cov=src --cov-report=html
+        python -m pytest test/ -v --cov=src --cov-report=html --cov-fail-under=90
       env:
         API_URL: "http://localhost:8080"
         API_TIMEOUT: "30"
