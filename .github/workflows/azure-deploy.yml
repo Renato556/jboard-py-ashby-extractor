@@ -43,6 +43,12 @@ jobs:
     - name: Run tests
       run: |
         python -m pytest test/ -v --cov=src --cov-report=html
+      env:
+        API_URL: "http://localhost:8080"
+        API_TIMEOUT: "30"
+        ASHBY_TIMEOUT: "5"
+        COMPANIES: "test-company"
+        DEFAULT_URL: "https://jobs.ashbyhq.com/"
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
