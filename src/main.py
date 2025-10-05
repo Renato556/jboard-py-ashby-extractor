@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 def run() -> None:
     companies_json = os.getenv('COMPANIES')
     companies_data = json.loads(companies_json)
-    companies = companies_data['companies'].split(',')
+    companies = companies_data['companies']
     logger.info('Starting job extraction process')
 
     for company in companies:
