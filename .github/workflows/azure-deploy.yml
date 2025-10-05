@@ -1,8 +1,8 @@
-name: Job Extractor - Ashby - Azure Deploy
+name: Deploy to Azure Container Apps
 
 on:
   push:
-    branches: [ master, main ]
+    branches: [ master, main, feature/* ]
 
 env:
   AZURE_CONTAINER_REGISTRY: jboardregistry
@@ -10,9 +10,10 @@ env:
   RESOURCE_GROUP: jboard-microservices
   CONTAINER_APP_ENVIRONMENT: jboard-environment
   IMAGE_NAME: jboard-py-ashby-extractor
+  CRUD_CONTAINER_APP_NAME: jboard-go-crud
 
 jobs:
-  build-and-deploy:
+  test-and-setup:
     runs-on: ubuntu-latest
 
     steps:
@@ -47,6 +48,15 @@ jobs:
         COMPANIES: "test-company"
         DEFAULT_URL: "https://jobs.ashbyhq.com/"
 
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    needs: test-and-setup
+    if: ${{ success() }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
       with:
@@ -56,6 +66,25 @@ jobs:
       uses: azure/login@v2
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Get CRUD URL
+      id: crud-url
+      run: |
+        CRUD_FQDN=$(az containerapp show \
+          --name ${{ env.CRUD_CONTAINER_APP_NAME }} \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --query "properties.configuration.ingress.fqdn" \
+          --output tsv)
+        
+        echo "Raw CRUD FQDN result: '$CRUD_FQDN'"
+        
+        if [ -z "$CRUD_FQDN" ] || [ "$CRUD_FQDN" = "null" ]; then
+          echo "Cannot deploy ashby-extractor without a valid CRUD URL"
+          exit 1
+        else
+          CRUD_URL="https://$CRUD_FQDN/v1"
+          echo "crud-url=$CRUD_URL" >> $GITHUB_OUTPUT
+        fi
 
     - name: Log in to Azure Container Registry
       uses: azure/docker-login@v1
@@ -75,53 +104,50 @@ jobs:
         platforms: linux/amd64
 
     - name: Deploy to Azure Container Apps
-      run: |
-        # Get internal URL of jboard-go-crud for API_URL
-        echo "Discovering jboard-go-crud internal URL..."
-        CRUD_INTERNAL_URL=$(az containerapp show \
-          --name jboard-go-crud \
-          --resource-group ${{ env.RESOURCE_GROUP }} \
-          --query "properties.configuration.ingress.fqdn" -o tsv 2>/dev/null)
-        
-        if [ -n "$CRUD_INTERNAL_URL" ] && [ "$CRUD_INTERNAL_URL" != "null" ]; then
-          API_URL="https://$CRUD_INTERNAL_URL/v1"
-          echo "Found jboard-go-crud internal URL: $API_URL"
-        else
-          API_URL="${{ secrets.API_URL }}"
-          echo "Warning: Could not find jboard-go-crud URL, using fallback: $API_URL"
-        fi
+      id: deploy
+      uses: azure/container-apps-deploy-action@v1
+      with:
+        containerAppName: ${{ env.CONTAINER_APP_NAME }}
+        resourceGroup: ${{ env.RESOURCE_GROUP }}
+        imageToDeploy: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        containerAppEnvironment: ${{ env.CONTAINER_APP_ENVIRONMENT }}
+        ingress: internal
+        registryUrl: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io
+        registryUsername: ${{ secrets.ACR_USERNAME }}
+        registryPassword: ${{ secrets.ACR_PASSWORD }}
+        environmentVariables: >
+          COMPANIES=${{ secrets.COMPANIES }}
+          API_URL=${{ steps.crud-url.outputs.crud-url }}
+          DEFAULT_URL=${{ secrets.DEFAULT_URL }}
+          API_TIMEOUT=${{ secrets.API_TIMEOUT }}
+          ASHBY_TIMEOUT=${{ secrets.ASHBY_TIMEOUT }}
 
-        # Check if container app exists
-        if az containerapp show --name ${{ env.CONTAINER_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} &>/dev/null; then
-          echo "Container App exists, updating..."
-          az containerapp update \
-            --name ${{ env.CONTAINER_APP_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
-            --set-env-vars \
-              COMPANIES="${{ secrets.COMPANIES }}" \
-              API_URL="$API_URL" \
-              DEFAULT_URL="${{ secrets.DEFAULT_URL }}" \
-              API_TIMEOUT="${{ secrets.API_TIMEOUT }}" \
-              ASHBY_TIMEOUT="${{ secrets.ASHBY_TIMEOUT }}"
+    - name: Deployment Summary
+      if: always()
+      run: |
+        if [ "${{ job.status }}" = "success" ]; then
+          echo "# ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Python Ashby Extractor deployed successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📋 **Configuration:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Container App: ${{ env.CONTAINER_APP_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- CRUD Backend: ${{ steps.crud-url.outputs.crud-url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Version: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Access: Internal only (no external access)" >> $GITHUB_STEP_SUMMARY
         else
-          echo "Container App does not exist, creating..."
-          az containerapp create \
-            --name ${{ env.CONTAINER_APP_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --environment ${{ env.CONTAINER_APP_ENVIRONMENT }} \
-            --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
-            --env-vars \
-              COMPANIES="${{ secrets.COMPANIES }}" \
-              API_URL="$API_URL" \
-              DEFAULT_URL="${{ secrets.DEFAULT_URL }}" \
-              API_TIMEOUT="${{ secrets.API_TIMEOUT }}" \
-              ASHBY_TIMEOUT="${{ secrets.ASHBY_TIMEOUT }}" \
-            --registry-server ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io \
-            --registry-username ${{ secrets.ACR_USERNAME }} \
-            --registry-password ${{ secrets.ACR_PASSWORD }} \
-            --cpu 0.25 \
-            --memory 0.5Gi \
-            --min-replicas 0 \
-            --max-replicas 1
+          echo "# ❌ Deployment Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Check which step failed
+          if [ "${{ needs.test-and-setup.result }}" != "success" ]; then
+            echo "🧪 **Tests Failed:** Check Python test failures and 90% coverage requirement" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.deploy.outcome }}" != "success" ]; then
+            echo "🚀 **Deployment Failed:** Check Azure credentials, Container Registry access, and CRUD service availability" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "🔧 **Build Failed:** Check Docker build logs and Python dependencies" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "💡 Fix the issue and push a new commit to retry deployment." >> $GITHUB_STEP_SUMMARY
         fi
