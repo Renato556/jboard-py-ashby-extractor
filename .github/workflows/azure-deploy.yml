@@ -115,7 +115,7 @@ jobs:
         registryUrl: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io
         registryUsername: ${{ secrets.ACR_USERNAME }}
         registryPassword: ${{ secrets.ACR_PASSWORD }}
-        environmentVariables: |
+        environmentVariables: >
           COMPANIES=${{ secrets.COMPANIES }}
           API_URL=${{ steps.crud-url.outputs.crud-url }}
           DEFAULT_URL=${{ secrets.DEFAULT_URL }}
