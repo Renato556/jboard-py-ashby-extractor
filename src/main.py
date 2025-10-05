@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+import json
 from dotenv import load_dotenv
 
 from src.services.jobs_service import get_jobs
@@ -11,10 +12,13 @@ logger = logging.getLogger(__name__)
 
 
 def run() -> None:
-    companies = os.getenv('COMPANIES').split(',')
+    companies_json = os.getenv('COMPANIES')
+    companies_data = json.loads(companies_json)
+    companies = companies_data['companies'].split(',')
     logger.info('Starting job extraction process')
 
     for company in companies:
+        company = company.strip()
         logger.info(f'Processing company: {company}')
         get_jobs(company)
         time.sleep(3)
