@@ -15,6 +15,7 @@ def run() -> None:
     logger.info('Starting job extraction process')
 
     for company in companies:
+        company = company.strip()
         logger.info(f'Processing company: {company}')
         get_jobs(company)
         time.sleep(3)
