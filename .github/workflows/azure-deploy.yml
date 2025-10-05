@@ -116,11 +116,11 @@ jobs:
         registryUsername: ${{ secrets.ACR_USERNAME }}
         registryPassword: ${{ secrets.ACR_PASSWORD }}
         environmentVariables: >
-          COMPANIES=${{ secrets.COMPANIES }}
+          COMPANIES="${{ secrets.COMPANIES }}"
           API_URL=${{ steps.crud-url.outputs.crud-url }}
-          DEFAULT_URL=${{ secrets.DEFAULT_URL }}
-          API_TIMEOUT=${{ secrets.API_TIMEOUT }}
-          ASHBY_TIMEOUT=${{ secrets.ASHBY_TIMEOUT }}
+          DEFAULT_URL="${{ secrets.DEFAULT_URL }}"
+          API_TIMEOUT="${{ secrets.API_TIMEOUT }}"
+          ASHBY_TIMEOUT="${{ secrets.ASHBY_TIMEOUT }}"
 
     - name: Deployment Summary
       if: always()
