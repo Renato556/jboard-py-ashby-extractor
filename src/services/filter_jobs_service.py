@@ -22,6 +22,9 @@ REASON_SUPABASE_DEFAULT = 'supabase_filter'
 REASON_DEEL_MATCH = '[deel_filter] Anywhere (LATAM) in location'
 REASON_DEEL_DEFAULT = 'deel_filter'
 
+REASON_RESEND_MATCH = '[resend_filter] Americas in location'
+REASON_RESEND_DEFAULT = 'resend_filter'
+
 
 def _lower(value: Any) -> str:
     return (str(value) if value is not None else '').strip().lower()
@@ -95,6 +98,14 @@ def _deel_filter(job_listing: FriendlyJob) -> bool:
     _mark_brazilian_friendly(job_listing, False, REASON_DEEL_DEFAULT)
     return False
 
+def _resend_filter(job_listing: FriendlyJob) -> bool:
+    if 'americas' in _lower(getattr(job_listing, 'locationName', None)):
+        _mark_brazilian_friendly(job_listing, True, REASON_RESEND_MATCH)
+        return True
+
+    _mark_brazilian_friendly(job_listing, False, REASON_RESEND_DEFAULT)
+    return False
+
 
 def _filter_by_company(job_listing: FriendlyJob, company: str) -> bool:
     if _global_filter(job_listing):
@@ -106,6 +117,8 @@ def _filter_by_company(job_listing: FriendlyJob, company: str) -> bool:
         return _supabase_filter(job_listing)
     elif company == 'deel':
         return _deel_filter(job_listing)
+    elif company == 'resend':
+        return _resend_filter(job_listing)
 
     return False
 

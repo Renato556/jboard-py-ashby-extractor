@@ -3,9 +3,6 @@ name: Job Extractor - Ashby - Azure Deploy
 on:
   push:
     branches: [ master, main ]
-  pull_request:
-    branches: [ master, main ]
-    types: [ closed ]
 
 env:
   AZURE_CONTAINER_REGISTRY: jboardregistry
