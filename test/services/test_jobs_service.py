@@ -20,116 +20,93 @@ class TestJobsService:
             mock_insert.assert_any_call({"title": "Job 1", "company": "Company A"})
             mock_insert.assert_any_call({"title": "Job 2", "company": "Company B"})
 
-    @patch("src.services.jobs_service.health_check")
     @patch("src.services.jobs_service.fetch_jobs")
-    def test_get_jobs_no_listings(self, mock_fetch, mock_health):
-        mock_health.return_value = True
+    def test_get_jobs_no_listings(self, mock_fetch):
         mock_fetch.return_value = None
 
         get_jobs("test-company")
 
-        mock_health.assert_called_once()
         mock_fetch.assert_called_once_with("test-company")
 
-    @patch("src.services.jobs_service.health_check")
     @patch("src.services.jobs_service.fetch_jobs")
-    def test_get_jobs_empty_listings(self, mock_fetch, mock_health):
-        mock_health.return_value = True
+    def test_get_jobs_empty_listings(self, mock_fetch):
         mock_fetch.return_value = []
 
         get_jobs("test-company")
 
-        mock_health.assert_called_once()
         mock_fetch.assert_called_once_with("test-company")
 
-    @patch("src.services.jobs_service.health_check")
     @patch("src.services.jobs_service.fetch_jobs")
     @patch("src.services.jobs_service.filter_brazilian_friendly_jobs")
-    def test_get_jobs_no_brazilian_jobs(self, mock_filter, mock_fetch, mock_health):
-        mock_health.return_value = True
+    def test_get_jobs_no_brazilian_jobs(self, mock_filter, mock_fetch):
         mock_fetch.return_value = [MagicMock()]
         mock_filter.return_value = []
 
         get_jobs("test-company")
 
-        mock_health.assert_called_once()
         mock_fetch.assert_called_once_with("test-company")
         mock_filter.assert_called_once()
 
-    @patch("src.services.jobs_service.health_check")
     @patch("src.services.jobs_service.fetch_jobs")
     @patch("src.services.jobs_service.filter_brazilian_friendly_jobs")
-    def test_get_jobs_no_brazilian_jobs_none(self, mock_filter, mock_fetch, mock_health):
-        mock_health.return_value = True
+    def test_get_jobs_no_brazilian_jobs_none(self, mock_filter, mock_fetch):
         mock_fetch.return_value = [MagicMock()]
         mock_filter.return_value = None
 
         get_jobs("test-company")
 
-        mock_health.assert_called_once()
         mock_fetch.assert_called_once_with("test-company")
         mock_filter.assert_called_once()
 
-    @patch("src.services.jobs_service.health_check")
     @patch("src.services.jobs_service.fetch_jobs")
     @patch("src.services.jobs_service.filter_brazilian_friendly_jobs")
     @patch("src.services.jobs_service.normalize_jobs")
-    def test_get_jobs_no_normalized_jobs(self, mock_normalize, mock_filter, mock_fetch, mock_health):
-        mock_health.return_value = True
+    def test_get_jobs_no_normalized_jobs(self, mock_normalize, mock_filter, mock_fetch):
         mock_fetch.return_value = [MagicMock()]
         mock_filter.return_value = [MagicMock()]
         mock_normalize.return_value = []
 
         get_jobs("test-company")
 
-        mock_health.assert_called_once()
         mock_fetch.assert_called_once_with("test-company")
         mock_filter.assert_called_once()
         mock_normalize.assert_called_once()
 
-    @patch("src.services.jobs_service.health_check")
     @patch("src.services.jobs_service.fetch_jobs")
     @patch("src.services.jobs_service.filter_brazilian_friendly_jobs")
     @patch("src.services.jobs_service.normalize_jobs")
-    def test_get_jobs_no_normalized_jobs_none(self, mock_normalize, mock_filter, mock_fetch, mock_health):
-        mock_health.return_value = True
+    def test_get_jobs_no_normalized_jobs_none(self, mock_normalize, mock_filter, mock_fetch):
         mock_fetch.return_value = [MagicMock()]
         mock_filter.return_value = [MagicMock()]
         mock_normalize.return_value = None
 
         get_jobs("test-company")
 
-        mock_health.assert_called_once()
         mock_fetch.assert_called_once_with("test-company")
         mock_filter.assert_called_once()
         mock_normalize.assert_called_once()
 
-    @patch("src.services.jobs_service.health_check")
     @patch("src.services.jobs_service.fetch_jobs")
     @patch("src.services.jobs_service.filter_brazilian_friendly_jobs")
     @patch("src.services.jobs_service.normalize_jobs")
     @patch("src.services.jobs_service._save_to_db")
-    def test_get_jobs_success(self, mock_save, mock_normalize, mock_filter, mock_fetch, mock_health):
-        mock_health.return_value = True
+    def test_get_jobs_success(self, mock_save, mock_normalize, mock_filter, mock_fetch):
         mock_fetch.return_value = [MagicMock()]
         mock_filter.return_value = [MagicMock()]
         mock_normalize.return_value = [MagicMock()]
 
         get_jobs("test-company")
 
-        mock_health.assert_called_once()
         mock_fetch.assert_called_once_with("test-company")
         mock_filter.assert_called_once()
         mock_normalize.assert_called_once()
         mock_save.assert_called_once()
 
-    @patch("src.services.jobs_service.health_check")
     @patch("src.services.jobs_service.fetch_jobs")
     @patch("src.services.jobs_service.filter_brazilian_friendly_jobs")
     @patch("src.services.jobs_service.normalize_jobs")
     @patch("src.services.jobs_service._save_to_db")
-    def test_get_jobs_save_error(self, mock_save, mock_normalize, mock_filter, mock_fetch, mock_health):
-        mock_health.return_value = True
+    def test_get_jobs_save_error(self, mock_save, mock_normalize, mock_filter, mock_fetch):
         mock_fetch.return_value = [MagicMock()]
         mock_filter.return_value = [MagicMock()]
         mock_normalize.return_value = [MagicMock()]
@@ -137,22 +114,3 @@ class TestJobsService:
 
         with pytest.raises(Exception, match="Database error"):
             get_jobs("test-company")
-
-    @patch("src.services.jobs_service.health_check")
-    @patch("src.services.jobs_service.fetch_jobs")
-    @patch("src.services.jobs_service.filter_brazilian_friendly_jobs")
-    @patch("src.services.jobs_service.normalize_jobs")
-    @patch("src.services.jobs_service._save_to_db")
-    def test_get_jobs_health_check_failed(self, mock_save, mock_normalize, mock_filter, mock_fetch, mock_health):
-        mock_health.return_value = False
-        mock_fetch.return_value = [MagicMock()]
-        mock_filter.return_value = [MagicMock()]
-        mock_normalize.return_value = [MagicMock()]
-
-        get_jobs("test-company")
-
-        mock_health.assert_called_once()
-        mock_fetch.assert_called_once_with("test-company")
-        mock_filter.assert_called_once()
-        mock_normalize.assert_called_once()
-        mock_save.assert_called_once()
