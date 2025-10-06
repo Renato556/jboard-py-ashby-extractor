@@ -3,7 +3,7 @@ import os
 import responses
 from unittest.mock import patch, MagicMock
 from requests.exceptions import Timeout, ConnectionError, RequestException
-from src.clients.database_client import DatabaseClient, insert_job, health_check, _client
+from src.clients.database_client import DatabaseClient, insert_job
 
 
 class TestDatabaseClient:
@@ -125,34 +125,3 @@ class TestInsertJob:
         insert_job(job)
 
         mock_client._make_request.assert_called_once_with('POST', 'jobs', job)
-
-
-class TestHealthCheck:
-    @patch("src.clients.database_client._client")
-    def test_health_check_success(self, mock_client):
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_client._make_request.return_value = mock_response
-
-        result = health_check()
-
-        assert result is True
-        mock_client._make_request.assert_called_once_with('GET', 'health')
-
-    @patch("src.clients.database_client._client")
-    def test_health_check_failure(self, mock_client):
-        mock_response = MagicMock()
-        mock_response.status_code = 500
-        mock_client._make_request.return_value = mock_response
-
-        result = health_check()
-
-        assert result is False
-
-    @patch("src.clients.database_client._client")
-    def test_health_check_exception(self, mock_client):
-        mock_client._make_request.side_effect = Exception("Connection failed")
-
-        result = health_check()
-
-        assert result is False

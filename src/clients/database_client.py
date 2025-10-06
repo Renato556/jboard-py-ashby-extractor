@@ -80,11 +80,3 @@ def insert_job(job):
     elif not response.ok:
         logger.error(f'Error inserting job: {response.status_code} - {response.text}')
         raise Exception(f'Error inserting job: {response.status_code}')
-
-def health_check() -> bool:
-    try:
-        response = _client._make_request('GET', 'health')
-        return response.status_code == 200
-    except Exception as e:
-        logger.error(f'Health check failed: {e}')
-        return False

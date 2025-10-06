@@ -1,6 +1,6 @@
 import logging
 
-from src.clients.database_client import insert_job, health_check
+from src.clients.database_client import insert_job
 from src.services.fetch_jobs_service import fetch_jobs
 from src.services.filter_jobs_service import filter_brazilian_friendly_jobs
 from src.services.normalize_jobs_service import normalize_jobs
@@ -12,12 +12,6 @@ def _save_to_db(jobs) -> None:
         insert_job(job.to_dict())
 
 def get_jobs(company: str) -> None:
-    logger.info(f'Checking API connectivity for company: {company}')
-    if not health_check():
-        logger.warning('API health check failed - attempting to continue anyway')
-    else:
-        logger.info('API health check passed')
-
     all_job_listings = fetch_jobs(company)
 
     if not all_job_listings:
