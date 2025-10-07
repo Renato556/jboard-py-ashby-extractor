@@ -68,25 +68,6 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-#    - name: Get CRUD URL
-#      id: crud-url
-#      run: |
-#        CRUD_FQDN=$(az containerapp show \
-#          --name ${{ env.CRUD_CONTAINER_APP_NAME }} \
-#          --resource-group ${{ env.RESOURCE_GROUP }} \
-#          --query "properties.configuration.ingress.fqdn" \
-#          --output tsv)
-#
-#        echo "Raw CRUD FQDN result: '$CRUD_FQDN'"
-#
-#        if [ -z "$CRUD_FQDN" ] || [ "$CRUD_FQDN" = "null" ]; then
-#          echo "Cannot deploy ashby-extractor without a valid CRUD URL"
-#          exit 1
-#        else
-#          CRUD_URL="https://$CRUD_FQDN/v1"
-#          echo "crud-url=$CRUD_URL" >> $GITHUB_OUTPUT
-#        fi
-
     - name: Log in to Azure Container Registry
       uses: azure/docker-login@v1
       with:
@@ -113,8 +94,7 @@ jobs:
             --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
             --set-env-vars \
               COMPANIES="${{ secrets.COMPANIES }}" \
-#              API_URL="${{ steps.crud-url.outputs.crud-url }}" \
-              API_URL="http://jboard-go-crud" \
+              API_URL="http://$CRUD_CONTAINER_APP_NAME" \
               DEFAULT_URL="${{ secrets.DEFAULT_URL }}" \
               API_TIMEOUT="${{ secrets.API_TIMEOUT }}" \
               ASHBY_TIMEOUT="${{ secrets.ASHBY_TIMEOUT }}"
