@@ -94,7 +94,7 @@ jobs:
             --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
             --set-env-vars \
               COMPANIES="${{ secrets.COMPANIES }}" \
-              API_URL="http://$CRUD_CONTAINER_APP_NAME" \
+              API_URL="http://jboard-go-crud" \
               DEFAULT_URL="${{ secrets.DEFAULT_URL }}" \
               API_TIMEOUT="${{ secrets.API_TIMEOUT }}" \
               ASHBY_TIMEOUT="${{ secrets.ASHBY_TIMEOUT }}"
@@ -109,7 +109,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "📋 **Configuration:**" >> $GITHUB_STEP_SUMMARY
           echo "- Container App: ${{ env.CONTAINER_APP_NAME }}" >> $GITHUB_STEP_SUMMARY
-          echo "- CRUD Backend: ${{ steps.crud-url.outputs.crud-url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- CRUD Backend: http://jboard-go-crud" >> $GITHUB_STEP_SUMMARY
           echo "- Version: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- Access: Internal only (no external access)" >> $GITHUB_STEP_SUMMARY
         else
