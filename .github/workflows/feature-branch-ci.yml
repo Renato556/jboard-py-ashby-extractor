@@ -1,0 +1,41 @@
+name: Feature Branch CI
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+  workflow_dispatch:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Run lint
+      run: |
+        pip install flake8
+        flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
+
+    - name: Run tests with coverage
+      run: python -m pytest test/ -v --cov=src --cov-report=html --cov-fail-under=90
+      env:
+        API_URL: "http://localhost:8080"
+        API_TIMEOUT: "30"
+        ASHBY_TIMEOUT: "5"
+        COMPANIES: "test-company"
+        DEFAULT_URL: "https://jobs.ashbyhq.com/"
+
+    - name: Build application
+      run: docker build -t jboard-py-ashby-extractor:feature .
